@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do List DApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #f5f7fa;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 { color: #3f51b5; }
+    input, button {
+      padding: 0.6rem 1rem;
+      margin: 0.4rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      cursor: pointer;
+      background: #3f51b5;
+      color: white;
+      font-weight: bold;
+    }
+    ul { list-style-type: none; padding: 0; }
+    li {
+      background: white;
+      padding: 10px;
+      margin: 8px;
+      border-radius: 6px;
+      width: 300px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .completed { text-decoration: line-through; color: #999; }
+  </style>
+</head>
+<body>
+  <h1>🧾 To-Do List DApp</h1>
+  <button id="connectButton">Connect Wallet</button>
+  <p id="walletAddress"></p>
+
+  <input type="text" id="taskInput" placeholder="Enter new task..." />
+  <button id="addButton">Add Task</button>
+
+  <ul id="taskList"></ul>
+
+  <script>
+    const contractAddress = "0x29a6e4e333302De3F301a0b0c6F8298bDF9B5ed8";
+
+    const contractABI = [
+      {
+        "inputs": [{"internalType": "string","name": "_description","type": "string"}],
+        "name": "addTask","outputs": [],"stateMutability": "nonpayable","type": "function"
+      },
+      {
+        "inputs": [{"internalType": "uint256","name": "_index","type": "uint256"}],
+        "name": "toggleComplete","outputs": [],"stateMutability": "nonpayable","type": "function"
+      },
+      {
+        "inputs": [],"name": "getTasks",
+        "outputs": [
+          {"components":[
+            {"internalType":"string","name":"description","type":"string"},
+            {"internalType":"bool","name":"completed","type":"bool"}],
+            "internalType":"struct ToDoList.Task[]",
+            "name":"","type":"tuple[]"}],
+        "stateMutability": "view","type": "function"
+      }
+    ];
+
+    let provider, signer, contract;
+
+    async function connectWallet() {
+      if (window.ethereum) {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        const address = await signer.getAddress();
+        document.getElementById("walletAddress").innerText = "Connected: " + address;
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+        loadTasks();
+      } else {
+        alert("MetaMask not detected!");
+      }
+    }
+
+    async function loadTasks() {
+      const tasks = await contract.getTasks();
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+      tasks.forEach((t, i) => {
+        const li = document.createElement("li");
+        li.className = t.completed ? "completed" : "";
+        li.textContent = t.description;
+        const btn = document.createElement("button");
+        btn.textContent = t.completed ? "Undo" : "Complete";
+        btn.onclick = async () => {
+          const tx = await contract.toggleComplete(i);
+          await tx.wait();
+          loadTasks();
+        };
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const task = document.getElementById("taskInput").value;
+      if (!task) return alert("Please enter a task.");
+      const tx = await contract.addTask(task);
+      await tx.wait();
+      document.getElementById("taskInput").value = "";
+      loadTasks();
+    }
+
+    document.getElementById("connectButton").onclick = connectWallet;
+    document.getElementById("addButton").onclick = addTask;
+  </script>
+</body>
+</html>
