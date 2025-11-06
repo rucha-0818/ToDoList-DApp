@@ -1,234 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🧾 To-Do List DApp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(120deg, #e0f7fa, #f1f8ff);
-      min-height: 100vh;
+      font-family: "Inter", sans-serif;
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      margin: 0;
+      padding: 0;
       display: flex;
-      justify-content: center;
-      align-items: center;
       flex-direction: column;
-      color: #222;
+      align-items: center;
+      min-height: 100vh;
     }
     h1 {
-      color: #0077cc;
+      margin-top: 40px;
+      font-size: 2rem;
+      color: #333;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 450px;
+      margin-top: 20px;
+      text-align: center;
     }
     input {
       padding: 10px;
-      width: 250px;
+      width: 70%;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-right: 8px;
+      font-size: 1rem;
+      outline: none;
+      margin-bottom: 10px;
     }
     button {
-      padding: 10px 18px;
-      border: none;
-      background-color: #007bff;
+      background-color: #4f46e5;
       color: white;
-      border-radius: 6px;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
       cursor: pointer;
-      margin: 5px;
+      font-size: 1rem;
+      margin: 4px;
     }
     button:hover {
-      background-color: #005dc1;
+      background-color: #3730a3;
     }
     ul {
-      list-style-type: none;
+      list-style: none;
       padding: 0;
+      text-align: left;
       margin-top: 20px;
-      width: 350px;
     }
     li {
-      background: white;
-      padding: 10px;
-      margin: 6px 0;
+      background: #f9fafb;
+      margin: 8px 0;
+      padding: 10px 12px;
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    #status {
-      background: #f8f9fa;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 8px;
-      margin: 10px;
-      font-size: 14px;
-      width: 340px;
-      text-align: center;
-    }
+    .done { color: green; font-weight: 600; }
+    .pending { color: #b91c1c; font-weight: 600; }
   </style>
 </head>
+
 <body>
   <h1>🧾 To-Do List DApp</h1>
 
-  <button id="connectButton">Connect Wallet</button><br>
+  <div class="card">
+    <button onclick="connectWallet()">🔗 Connect Wallet</button><br><br>
 
-  <input type="text" id="taskInput" placeholder="Enter new task...">
-  <button onclick="addTask()">Add Task</button>
-  <button onclick="loadTasks()">Load Tasks</button>
+    <input id="taskInput" placeholder="Enter new task..." />
+    <button onclick="addTask()">Add Task</button>
+    <button onclick="loadTasks()">Load Tasks</button>
 
-  <div id="status">🕓 Waiting for wallet connection...</div>
+    <ul id="taskList"></ul>
+  </div>
 
-  <ul id="taskList"></ul>
-
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
   <script>
-    const contractAddress = "0x0b32F8B0f9375b328d1F6E086Df379480019c267" ;// Update if re-deployed
+    const contractAddress = "0x0b32F8B0f9375b328d1F6E086Df379480019c267";
     const contractABI = [
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_description",
-				"type": "string"
-			}
-		],
-		"name": "addTask",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_index",
-				"type": "uint256"
-			}
-		],
-		"name": "toggleComplete",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getTasks",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "description",
-						"type": "string"
-					},
-					{
-						"internalType": "bool",
-						"name": "completed",
-						"type": "bool"
-					}
-				],
-				"internalType": "struct ToDoList.Task[]",
-				"name": "",
-				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "tasks",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "description",
-				"type": "string"
-			},
-			{
-				"internalType": "bool",
-				"name": "completed",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-]
+      {
+        "inputs":[{"internalType":"string","name":"_description","type":"string"}],
+        "name":"addTask","outputs":[],"stateMutability":"nonpayable","type":"function"
+      },
+      {
+        "inputs":[{"internalType":"uint256","name":"_index","type":"uint256"}],
+        "name":"toggleComplete","outputs":[],"stateMutability":"nonpayable","type":"function"
+      },
+      {
+        "inputs":[],
+        "name":"getTasks",
+        "outputs":[{"components":[
+          {"internalType":"string","name":"description","type":"string"},
+          {"internalType":"bool","name":"completed","type":"bool"}
+        ],
+        "internalType":"struct ToDoList.Task[]",
+        "name":"",
+        "type":"tuple[]"}],
+        "stateMutability":"view","type":"function"
+      },
+      {
+        "inputs":[{"internalType":"uint256","name":"","type":"uint256"}],
+        "name":"tasks",
+        "outputs":[
+          {"internalType":"string","name":"description","type":"string"},
+          {"internalType":"bool","name":"completed","type":"bool"}
+        ],
+        "stateMutability":"view","type":"function"
+      }
+    ];
+
     let provider, signer, contract;
 
-    const statusBox = document.getElementById("status");
-
-    // Connect wallet
+    // 🟢 Connect MetaMask
     async function connectWallet() {
       try {
-        if (typeof window.ethereum === "undefined") {
-          alert("MetaMask not detected. Please install it first!");
-          statusBox.textContent = "❌ MetaMask not detected.";
-          return;
-        }
+        if (!window.ethereum) return alert("MetaMask not found!");
+        await window.ethereum.request({ method: "eth_requestAccounts" });
 
-        provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
         contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-        const addr = await signer.getAddress();
-        statusBox.textContent = `✅ Connected: ${addr.substring(0,6)}...${addr.slice(-4)}`;
-        document.getElementById("connectButton").innerText = "Wallet Connected ✅";
+        const network = await provider.getNetwork();
+        if (network.chainId !== 11155111)
+          return alert("Please switch MetaMask to Sepolia Test Network.");
 
-        loadTasks();
+        alert("✅ Connected to wallet!");
       } catch (err) {
         console.error(err);
-        statusBox.textContent = "⚠️ Connection failed. Check console.";
+        alert("⚠️ Connection failed. Check console.");
       }
     }
 
-    document.getElementById("connectButton").addEventListener("click", connectWallet);
-
-    // Add task
+    // ➕ Add task
     async function addTask() {
-      if (!contract) return alert("Connect wallet first!");
-      const desc = document.getElementById("taskInput").value.trim();
-      if (!desc) return alert("Please enter a task!");
-      statusBox.textContent = "🕓 Sending transaction...";
+      const task = document.getElementById("taskInput").value.trim();
+      if (!task) return alert("Please enter a task!");
       try {
-        const tx = await contract.addTask(desc);
+        const tx = await contract.addTask(task);
         await tx.wait();
-        statusBox.textContent = "✅ Task added successfully!";
+        alert("✅ Task added successfully!");
         document.getElementById("taskInput").value = "";
         loadTasks();
       } catch (err) {
         console.error(err);
-        statusBox.textContent = "⚠️ Transaction failed. Check console.";
+        alert("❌ Failed to add task. Check console.");
       }
     }
 
-    // Load all tasks
+    // 📜 Load all tasks
     async function loadTasks() {
-      if (!contract) return alert("Connect wallet first!");
-      statusBox.textContent = "🔄 Loading tasks from blockchain...";
       try {
         const tasks = await contract.getTasks();
-        console.log("Tasks fetched:", tasks);
         const list = document.getElementById("taskList");
         list.innerHTML = "";
 
-        if (tasks.length === 0) {
-          list.innerHTML = "<li>No tasks yet.</li>";
-          statusBox.textContent = "ℹ️ No tasks found.";
-          return;
-        }
-
-        tasks.forEach((task, i) => {
+        tasks.forEach((t, i) => {
           const li = document.createElement("li");
-          li.textContent = `${i + 1}. ${task.description} — ${task.completed ? "✅ Done" : "❌ Pending"}`;
+          li.innerHTML = `
+            ${t.description}
+            <span class="${t.completed ? 'done' : 'pending'}">
+              ${t.completed ? '✅ Done' : '❌ Pending'}
+            </span>
+            <button onclick="toggleTask(${i})">Toggle</button>
+          `;
           list.appendChild(li);
         });
-        statusBox.textContent = `✅ ${tasks.length} task(s) loaded successfully!`;
       } catch (err) {
         console.error(err);
-        statusBox.textContent = "⚠️ Failed to load tasks. Check console.";
+        alert("⚠️ Error loading tasks. Check console.");
+      }
+    }
+
+    // 🔁 Toggle completion
+    async function toggleTask(index) {
+      try {
+        const tx = await contract.toggleComplete(index);
+        await tx.wait();
+        alert("🔁 Task status updated!");
+        loadTasks();
+      } catch (err) {
+        console.error(err);
+        alert("⚠️ Failed to toggle task. Check console.");
       }
     }
   </script>
