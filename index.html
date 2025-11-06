@@ -1,129 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>To-Do List DApp</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧾 To-Do List DApp</title>
   <style>
     body {
-      font-family: "Poppins", sans-serif;
-      background-color: #f5f7fa;
-      color: #222;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(120deg, #c3e0ff, #f5faff);
+      min-height: 100vh;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      padding: 2rem;
+      flex-direction: column;
+      color: #222;
     }
-    h1 { color: #3f51b5; }
-    input, button {
-      padding: 0.6rem 1rem;
-      margin: 0.4rem;
-      border-radius: 6px;
+    h1 {
+      margin-bottom: 10px;
+      color: #0066cc;
+    }
+    input {
+      padding: 8px;
+      width: 250px;
       border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-right: 8px;
     }
     button {
-      cursor: pointer;
-      background: #3f51b5;
+      padding: 8px 16px;
+      border: none;
+      background-color: #007bff;
       color: white;
-      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
     }
-    ul { list-style-type: none; padding: 0; }
+    button:hover {
+      background-color: #005dc1;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin-top: 20px;
+      width: 320px;
+    }
     li {
       background: white;
       padding: 10px;
-      margin: 8px;
-      border-radius: 6px;
-      width: 300px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin: 6px 0;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .completed { text-decoration: line-through; color: #999; }
   </style>
 </head>
 <body>
   <h1>🧾 To-Do List DApp</h1>
-  <button id="connectButton">Connect Wallet</button>
-  <p id="walletAddress"></p>
 
-  <input type="text" id="taskInput" placeholder="Enter new task..." />
-  <button id="addButton">Add Task</button>
+  <button id="connectButton">Connect Wallet</button>
+  <br><br>
+
+  <input type="text" id="taskInput" placeholder="Enter new task...">
+  <button onclick="addTask()">Add Task</button>
 
   <ul id="taskList"></ul>
 
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
   <script>
-    const contractAddress = "0x29a6e4e333302De3F301a0b0c6F8298bDF9B5ed8";
-
+    const contractAddress = "0x29a6e4e333302De3F301a0b0c6F8298bDF9B5ed8"; // your deployed contract address
     const contractABI = [
       {
-        "inputs": [{"internalType": "string","name": "_description","type": "string"}],
-        "name": "addTask","outputs": [],"stateMutability": "nonpayable","type": "function"
+        "inputs":[{"internalType":"string","name":"_description","type":"string"}],
+        "name":"addTask",
+        "outputs":[],
+        "stateMutability":"nonpayable",
+        "type":"function"
       },
       {
-        "inputs": [{"internalType": "uint256","name": "_index","type": "uint256"}],
-        "name": "toggleComplete","outputs": [],"stateMutability": "nonpayable","type": "function"
+        "inputs":[{"internalType":"uint256","name":"_index","type":"uint256"}],
+        "name":"toggleComplete",
+        "outputs":[],
+        "stateMutability":"nonpayable",
+        "type":"function"
       },
       {
-        "inputs": [],"name": "getTasks",
-        "outputs": [
-          {"components":[
-            {"internalType":"string","name":"description","type":"string"},
-            {"internalType":"bool","name":"completed","type":"bool"}],
-            "internalType":"struct ToDoList.Task[]",
-            "name":"","type":"tuple[]"}],
-        "stateMutability": "view","type": "function"
+        "inputs":[],
+        "name":"getTasks",
+        "outputs":[
+          {"components":[{"internalType":"string","name":"description","type":"string"},
+                         {"internalType":"bool","name":"completed","type":"bool"}],
+           "internalType":"struct ToDoList.Task[]","name":"","type":"tuple[]"}
+        ],
+        "stateMutability":"view",
+        "type":"function"
       }
     ];
 
     let provider, signer, contract;
 
+    // Connect MetaMask
     async function connectWallet() {
-      if (window.ethereum) {
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        signer = provider.getSigner();
-        const address = await signer.getAddress();
-        document.getElementById("walletAddress").innerText = "Connected: " + address;
+      if (typeof window.ethereum !== "undefined") {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
         contract = new ethers.Contract(contractAddress, contractABI, signer);
+        document.getElementById("connectButton").innerText = "✅ Wallet Connected";
         loadTasks();
       } else {
-        alert("MetaMask not detected!");
+        alert("MetaMask not detected. Please install it first!");
       }
     }
 
-    async function loadTasks() {
-      const tasks = await contract.getTasks();
-      const list = document.getElementById("taskList");
-      list.innerHTML = "";
-      tasks.forEach((t, i) => {
-        const li = document.createElement("li");
-        li.className = t.completed ? "completed" : "";
-        li.textContent = t.description;
-        const btn = document.createElement("button");
-        btn.textContent = t.completed ? "Undo" : "Complete";
-        btn.onclick = async () => {
-          const tx = await contract.toggleComplete(i);
-          await tx.wait();
-          loadTasks();
-        };
-        li.appendChild(btn);
-        list.appendChild(li);
-      });
-    }
+    document.getElementById("connectButton").addEventListener("click", connectWallet);
 
+    // Add a new task
     async function addTask() {
-      const task = document.getElementById("taskInput").value;
-      if (!task) return alert("Please enter a task.");
-      const tx = await contract.addTask(task);
+      const desc = document.getElementById("taskInput").value.trim();
+      if (!desc) return alert("Please enter a task!");
+      const tx = await contract.addTask(desc);
       await tx.wait();
       document.getElementById("taskInput").value = "";
+      alert("✅ Task added successfully!");
       loadTasks();
     }
 
-    document.getElementById("connectButton").onclick = connectWallet;
-    document.getElementById("addButton").onclick = addTask;
+    // Load all tasks
+    async function loadTasks() {
+      if (!contract) return;
+      const tasks = await contract.getTasks();
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+      tasks.forEach((task, i) => {
+        const li = document.createElement("li");
+        li.textContent = `${i + 1}. ${task.description} — ${task.completed ? "✅ Done" : "❌ Pending"}`;
+        list.appendChild(li);
+      });
+    }
   </script>
 </body>
 </html>
