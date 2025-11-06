@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(120deg, #c3e0ff, #f5faff);
+      background: linear-gradient(120deg, #e0f7fa, #f1f8ff);
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -16,23 +16,23 @@
       color: #222;
     }
     h1 {
-      margin-bottom: 10px;
-      color: #0066cc;
+      color: #0077cc;
     }
     input {
-      padding: 8px;
+      padding: 10px;
       width: 250px;
       border: 1px solid #ccc;
       border-radius: 6px;
       margin-right: 8px;
     }
     button {
-      padding: 8px 16px;
+      padding: 10px 18px;
       border: none;
       background-color: #007bff;
       color: white;
       border-radius: 6px;
       cursor: pointer;
+      margin: 5px;
     }
     button:hover {
       background-color: #005dc1;
@@ -41,7 +41,7 @@
       list-style-type: none;
       padding: 0;
       margin-top: 20px;
-      width: 320px;
+      width: 350px;
     }
     li {
       background: white;
@@ -50,22 +50,34 @@
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
+    #status {
+      background: #f8f9fa;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 8px;
+      margin: 10px;
+      font-size: 14px;
+      width: 340px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <h1>🧾 To-Do List DApp</h1>
 
-  <button id="connectButton">Connect Wallet</button>
-  <br><br>
+  <button id="connectButton">Connect Wallet</button><br>
 
   <input type="text" id="taskInput" placeholder="Enter new task...">
   <button onclick="addTask()">Add Task</button>
+  <button onclick="loadTasks()">Load Tasks</button>
+
+  <div id="status">🕓 Waiting for wallet connection...</div>
 
   <ul id="taskList"></ul>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
   <script>
-    const contractAddress = "0x29a6e4e333302De3F301a0b0c6F8298bDF9B5ed8"; // your deployed contract address
+    const contractAddress = "0x29a6e4e333302De3F301a0b0c6F8298bDF9B5ed8"; // Update if re-deployed
     const contractABI = [
       {
         "inputs":[{"internalType":"string","name":"_description","type":"string"}],
@@ -96,44 +108,79 @@
 
     let provider, signer, contract;
 
-    // Connect MetaMask
+    const statusBox = document.getElementById("status");
+
+    // Connect wallet
     async function connectWallet() {
-      if (typeof window.ethereum !== "undefined") {
+      try {
+        if (typeof window.ethereum === "undefined") {
+          alert("MetaMask not detected. Please install it first!");
+          statusBox.textContent = "❌ MetaMask not detected.";
+          return;
+        }
+
         provider = new ethers.BrowserProvider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
         signer = await provider.getSigner();
         contract = new ethers.Contract(contractAddress, contractABI, signer);
-        document.getElementById("connectButton").innerText = "✅ Wallet Connected";
+
+        const addr = await signer.getAddress();
+        statusBox.textContent = `✅ Connected: ${addr.substring(0,6)}...${addr.slice(-4)}`;
+        document.getElementById("connectButton").innerText = "Wallet Connected ✅";
+
         loadTasks();
-      } else {
-        alert("MetaMask not detected. Please install it first!");
+      } catch (err) {
+        console.error(err);
+        statusBox.textContent = "⚠️ Connection failed. Check console.";
       }
     }
 
     document.getElementById("connectButton").addEventListener("click", connectWallet);
 
-    // Add a new task
+    // Add task
     async function addTask() {
+      if (!contract) return alert("Connect wallet first!");
       const desc = document.getElementById("taskInput").value.trim();
       if (!desc) return alert("Please enter a task!");
-      const tx = await contract.addTask(desc);
-      await tx.wait();
-      document.getElementById("taskInput").value = "";
-      alert("✅ Task added successfully!");
-      loadTasks();
+      statusBox.textContent = "🕓 Sending transaction...";
+      try {
+        const tx = await contract.addTask(desc);
+        await tx.wait();
+        statusBox.textContent = "✅ Task added successfully!";
+        document.getElementById("taskInput").value = "";
+        loadTasks();
+      } catch (err) {
+        console.error(err);
+        statusBox.textContent = "⚠️ Transaction failed. Check console.";
+      }
     }
 
     // Load all tasks
     async function loadTasks() {
-      if (!contract) return;
-      const tasks = await contract.getTasks();
-      const list = document.getElementById("taskList");
-      list.innerHTML = "";
-      tasks.forEach((task, i) => {
-        const li = document.createElement("li");
-        li.textContent = `${i + 1}. ${task.description} — ${task.completed ? "✅ Done" : "❌ Pending"}`;
-        list.appendChild(li);
-      });
+      if (!contract) return alert("Connect wallet first!");
+      statusBox.textContent = "🔄 Loading tasks from blockchain...";
+      try {
+        const tasks = await contract.getTasks();
+        console.log("Tasks fetched:", tasks);
+        const list = document.getElementById("taskList");
+        list.innerHTML = "";
+
+        if (tasks.length === 0) {
+          list.innerHTML = "<li>No tasks yet.</li>";
+          statusBox.textContent = "ℹ️ No tasks found.";
+          return;
+        }
+
+        tasks.forEach((task, i) => {
+          const li = document.createElement("li");
+          li.textContent = `${i + 1}. ${task.description} — ${task.completed ? "✅ Done" : "❌ Pending"}`;
+          list.appendChild(li);
+        });
+        statusBox.textContent = `✅ ${tasks.length} task(s) loaded successfully!`;
+      } catch (err) {
+        console.error(err);
+        statusBox.textContent = "⚠️ Failed to load tasks. Check console.";
+      }
     }
   </script>
 </body>
