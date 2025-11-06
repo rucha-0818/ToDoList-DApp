@@ -77,35 +77,84 @@
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
   <script>
-    const contractAddress = "0x29a6e4e333302De3F301a0b0c6F8298bDF9B5ed8"; // Update if re-deployed
+    const contractAddress = "0x0b32F8B0f9375b328d1F6E086Df379480019c267" ;// Update if re-deployed
     const contractABI = [
-      {
-        "inputs":[{"internalType":"string","name":"_description","type":"string"}],
-        "name":"addTask",
-        "outputs":[],
-        "stateMutability":"nonpayable",
-        "type":"function"
-      },
-      {
-        "inputs":[{"internalType":"uint256","name":"_index","type":"uint256"}],
-        "name":"toggleComplete",
-        "outputs":[],
-        "stateMutability":"nonpayable",
-        "type":"function"
-      },
-      {
-        "inputs":[],
-        "name":"getTasks",
-        "outputs":[
-          {"components":[{"internalType":"string","name":"description","type":"string"},
-                         {"internalType":"bool","name":"completed","type":"bool"}],
-           "internalType":"struct ToDoList.Task[]","name":"","type":"tuple[]"}
-        ],
-        "stateMutability":"view",
-        "type":"function"
-      }
-    ];
-
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_description",
+				"type": "string"
+			}
+		],
+		"name": "addTask",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_index",
+				"type": "uint256"
+			}
+		],
+		"name": "toggleComplete",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getTasks",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "description",
+						"type": "string"
+					},
+					{
+						"internalType": "bool",
+						"name": "completed",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct ToDoList.Task[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "tasks",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"internalType": "bool",
+				"name": "completed",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
     let provider, signer, contract;
 
     const statusBox = document.getElementById("status");
